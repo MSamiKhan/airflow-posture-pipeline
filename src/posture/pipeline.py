@@ -42,6 +42,7 @@ def extract_keypoints(
 ) -> Path:
     """Run YOLO pose on sampled video frames and save raw keypoints."""
     import cv2  # heavy imports kept lazy so DAG parsing and unit tests stay fast
+    import numpy as np
     from ultralytics import YOLO
 
     videos = sorted(p for p in Path(input_dir).iterdir() if p.suffix.lower() in VIDEO_EXTENSIONS)
@@ -49,6 +50,8 @@ def extract_keypoints(
         raise FileNotFoundError(f"No video files found in {input_dir}. Add a video and re-run.")
 
     model = YOLO(model_path)
+    # Warm-up so one-time model initialisation doesn't distort latency metrics
+    model.predict(np.zeros((480, 640, 3), dtype=np.uint8), verbose=False, device="cpu")
     records: List[dict] = []
 
     for video in videos:
