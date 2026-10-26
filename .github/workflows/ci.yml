@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Airflow (pinned with official constraints)
+        run: |
+          pip install "apache-airflow==2.9.3" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.3/constraints-3.11.txt"
+
+      - name: Install dev dependencies
+        run: pip install pytest ruff boto3
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest -q
+        env:
+          AIRFLOW__CORE__LOAD_EXAMPLES: "false"
